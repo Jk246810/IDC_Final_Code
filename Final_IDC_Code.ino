@@ -206,41 +206,36 @@ void fireSensingFunc(){
 
 void airSensingFunc(){
   //need to add part that disables sensing when the button is pressed
-  int count = 0;
+  long int count = 0;
   int t = 0;   
   int horn; 
   
    //rotates 
-   while(t!=4){
+   while(t!=5){
    s.write(0);
    for (int i = 0; i <= 180; i += 3) { 
    s.write(i);
    delay(40);
    int qti1 = RCTime(qtiPin);
    //Serial.println(qti1); 
-      if(qti1 >= 66) {
-        count++; 
-      }
+      
+        count+= qti1; 
  
    }
     t++; 
-   }
-
-   if(t==4){
-     Serial.println(count); 
-     if(count>=0 && count<4){
-      Serial.println("Horn 3");
-      horn = 3;  
-     }if (count>5 && count<100){
-       Serial.println("Horn 1"); 
-       horn =1; 
-     }if(count>100){
-       Serial.println("Horn 2"); 
-       horn =2; 
-     }
-     count = 0; 
-     t=0; 
-   }
+  }
+   Serial.println(count); 
+   lcd.clear();
+   lcd.setCursor(0,1); 
+   if(count >= 14000 && count <= 20000){
+          lcd.print("1"); 
+          Serial.println("horn1"); 
+       }else if(count <= 12000){
+         lcd.print("3");
+          Serial.println("horn3"); 
+       }else if(count > 20000){
+        Serial.println("horn2"); 
+       } 
  
 }
 
