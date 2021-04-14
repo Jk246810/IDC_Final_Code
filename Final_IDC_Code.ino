@@ -15,8 +15,8 @@ Servo s;
 Adafruit_MPU6050 mpu;
 
 //ping sensor 
-#define trigPin 6
-#define ePin 7
+#define trigPin 7
+#define ePin 8
 
 //color sensing 
 #include <Wire.h>
@@ -61,7 +61,7 @@ void setup() {
   //initialize button 
    pinMode(buttonPin, INPUT);
 
-  // setupAccelerometer();
+   setupAccelerometer();
 
    //initialize rgb
    pinMode(redPin, OUTPUT);
@@ -76,88 +76,103 @@ void setup() {
 
 void loop() {
   if(Serial.available()){
-    char c = Serial.read(); 
-    if( c == 'w'){
+    String c = Serial.readString(); 
+    if(c.substring(0,1).equals("w")){
       waterSensingFunc(); 
       //start water sensing tasks 
-    }else if( c == 'e'){
+    }else if(c.substring(0,1).equals("e")){
       earthSensingFunc(); 
       //start earth tasks
-    }else if(c == 'f'){
+    }else if(c.substring(0,1).equals("f")){
       fireSensingFunc(); 
        
       //start fire tasks
-    }else if(c == 'a'){
+    }else if(c.substring(0,1).equals("a")){
       //start air tasks
       airSensingFunc();  
-    }else if(c == 'n'){
-      Serial.println("What integer would you like to add to the sum?"); 
-      int toAdd = Serial.read(); 
-      Serial.println(toAdd);
-      sum += toAdd; 
-      lcd.clear(); 
-      lcd.print(sum); 
-    }else if(c == 'd'){//function to end game
+    }else if(c.substring(0,1).equals("n")){
+      Serial.println(c);
+      int num = c.substring(1).toInt();
+      Serial.println(num); 
+      Serial.println("added: " + num);  
+    }else if(c.substring(0,1).equals("d")){//function to end game
       endGame();
     }
   }
 
 }
 void earthSensingFunc(){
-  bool sensing = true;
+
   int ring = 0; 
-  while(sensing){
+  String result = ""; 
      cm = 0.01723 * readUltrasonicDistance(trigPin, ePin);
   // convert to inches by dividing by 2.54
     inches = (cm / 2.54);
+
+  Serial.print(inches);
+  Serial.print("in, ");
+  Serial.print(cm);
+  Serial.println("cm");
+  delay(100); // Wait for 100 millisecond(s)
     //need to adjust threshold
-  if(inches<5)
+  if(inches<=2)
   {
     ring = 1; 
+    result = "1"; 
   }
-  else if(inches>5 && inches<10){
+  else if(inches>=3 && inches<=5){
     ring = 2; 
+    result = "2"; 
    }
-  else if(inches>10 && inches<20){
+  else if(inches>=6 && inches<=8){
    ring = 3; 
+   result = "3"; 
   }
-  
- ///disable sensing when the button is pressed, print out ring on LCD, and add to sum
-  }
+
+  sum += ring; 
+  lcd.clear(); 
+  lcd.setCursor(0,1); 
+  lcd.print(result);
   
 }
 
 void waterSensingFunc(){
  
   int wave = 0; 
+  String result = ""; 
   while(wave == 0){
     sensors_event_t a, g, temp;
      mpu.getEvent(&a, &g, &temp);
-    if(a.acceleration.z>=-0.0 && a.acceleration.z<=0.7){
+    if(a.acceleration.x>=-0.8 && a.acceleration.x<=-0.1){
     
     Serial.print("object 2"); 
-    wave = 2; 
+     wave = 2; 
+     result = "2"; 
    }
   
-   else if(a.acceleration.z>=0.8 && a.acceleration.z<=2.5){
+   else if(a.acceleration.x<=-1){
     Serial.print("object 3"); 
     wave = 3; 
+    result = ""; 
    }
   
-   else if (a.acceleration.z<=0){
+   else if (a.acceleration.x>=-0.08){
     Serial.print("object 1"); 
     wave = 1;  
+    result = "1"; 
     }
   }
  sum += wave; 
  lcd.clear(); 
- lcd.print(sum); 
+ lcd.setCursor(0,1); 
+ lcd.print(result); 
  delay(2000); 
 }
 
 void fireSensingFunc(){
   bool sensing = true;
   int fireState = 0; 
+  String result = ""; 
   if (tcs.begin()) {
     Serial.println("Found sensor");
   } else {
@@ -171,31 +186,34 @@ void fireSensingFunc(){
   lux = tcs.calculateLux(r, g, b);
 
   //need to adjust thresholds
-  if((g>=450 && g<=800) && (b<=800) && (c>=4000 && c<=5800))
+  if((g>=450 && g<=1300) && (b<=1200) && (c>=7200 && c<=10000))
   {
     Serial.println("red"); 
     fireState = 1; 
+    result = "1"; 
     delay(1000);
   }
-  else if((g>=1000 && g<=1400) && (c>=5900 && c<=7100)){
+  else if((g>=1400 && g<=2200) && (c>=7100&& c<=11000)){
     Serial.println("orange");
     fireState = 2; 
+    result = "2"; 
     delay(1000);
    }
   else if((colorTemp>4500)){
     Serial.println("blue");
     fireState = 3; 
+    result = "3"; 
     delay(1000);
   }
   buttonState = digitalRead(buttonPin);
   if (buttonState == HIGH) {
-    Serial.println("Stored variable");
-    Serial.println(fireState); 
+    Serial.println("Stored variable: " + fireState);
     sum += fireState; 
     
     //added lcd functionality
-    lcd.clear(); 
-    lcd.print("sum: " + sum); 
+    lcd.clear();
+    lcd.setCursor(0,1) ;
+    lcd.print(result); 
     
     buttonState = 0; 
     sensing = false; 
@@ -230,11 +248,14 @@ void airSensingFunc(){
    if(count >= 14000 && count <= 20000){
           lcd.print("1"); 
           Serial.println("horn1"); 
+          sum += 1; 
        }else if(count <= 12000){
          lcd.print("3");
           Serial.println("horn3"); 
+          sum += 3; 
        }else if(count > 20000){
         Serial.println("horn2"); 
+         sum += 3; 
        } 
  
 }
