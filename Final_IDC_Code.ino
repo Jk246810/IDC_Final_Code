@@ -2,9 +2,10 @@
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+//for air sensing
 #include <Servo.h>
 #define servoPin 12
-#define qtiPin 10 //for air sensing 
+#define qtiPin 10  
 Servo s;
 
 //accelerometer
@@ -39,11 +40,12 @@ int speakerPin = 6;
 
 int numTones = 62;
 int tones[] = {587, 784, 880, 988, 988, 988, 988, 988, 988, 988, 932, 988, 784, 784, 784, 784, 784, 784, 784, 880, 988, 1047, 1047, 1319, 1319, 1319, 1319, 1175, 1047, 988, 988, 988, 784, 880, 988, 1047, 1047, 1319, 1319, 1319, 1319, 1175, 1047, 988, 988, 784, 784, 784, 784, 880, 988, 988, 988, 1047, 880, 880, 880, 988, 784, 784, 784, 784};
-//            You are my sunshine
+// You are my sunshine song
 
-
+//minor key tones
 int tonesTwo[] = {523, 494,440, 392, 349, 330, 294};
 
+//variables for RGB light 
 int redPin = 3;
 int greenPin = 2; 
 int bluePin = 4; 
@@ -84,17 +86,23 @@ void loop() {
       earthSensingFunc(); 
       //start earth tasks
     }else if(c.substring(0,1).equals("f")){
-      fireSensingFunc(); 
-       
+      fireSensingFunc();  
       //start fire tasks
     }else if(c.substring(0,1).equals("a")){
       //start air tasks
       airSensingFunc();  
     }else if(c.substring(0,1).equals("n")){
-      Serial.println(c);
       int num = c.substring(1).toInt();
-      Serial.println(num); 
-      Serial.println("added: " + num);  
+      lcd.clear();
+      lcd.setCursor(0,1);
+      lcd.print("Added: " + c.substring(1,2));
+      sum += num; 
+    }else if(c.substring(0,1).equals("s")){
+      int num = c.substring(1).toInt();
+      lcd.clear();
+      lcd.setCursor(0,1);
+      lcd.print("Subtracted: " + c.substring(1,2));
+      sum -= num; 
     }else if(c.substring(0,1).equals("d")){//function to end game
       endGame();
     }
@@ -114,7 +122,7 @@ void earthSensingFunc(){
   Serial.print(cm);
   Serial.println("cm");
   delay(100); // Wait for 100 millisecond(s)
-    //need to adjust threshold
+    //thresholds for earth sensing
   if(inches<=2)
   {
     ring = 1; 
@@ -132,7 +140,7 @@ void earthSensingFunc(){
   sum += ring; 
   lcd.clear(); 
   lcd.setCursor(0,1); 
-  lcd.print(result);
+  lcd.print("Earth Nation: " + result);
   
 }
 
@@ -165,7 +173,7 @@ void waterSensingFunc(){
  sum += wave; 
  lcd.clear(); 
  lcd.setCursor(0,1); 
- lcd.print(result); 
+ lcd.print("Water Nation: " + result); 
  delay(2000); 
 }
 
@@ -213,7 +221,7 @@ void fireSensingFunc(){
     //added lcd functionality
     lcd.clear();
     lcd.setCursor(0,1) ;
-    lcd.print(result); 
+    lcd.print("Fire Nation: " + result); 
     
     buttonState = 0; 
     sensing = false; 
@@ -245,17 +253,18 @@ void airSensingFunc(){
    Serial.println(count); 
    lcd.clear();
    lcd.setCursor(0,1); 
-   if(count >= 14000 && count <= 20000){
-          lcd.print("1"); 
+   if(count >= 9000 && count <= 20000){
+          lcd.print("Air Nation: 1"); 
           Serial.println("horn1"); 
           sum += 1; 
-       }else if(count <= 12000){
-         lcd.print("3");
+       }else if(count <= 7000){
+         lcd.print("Air Nation: 3");
           Serial.println("horn3"); 
           sum += 3; 
        }else if(count > 20000){
+        lcd.print("Air Nation: 2");
         Serial.println("horn2"); 
-         sum += 3; 
+         sum += 2; 
        } 
  
 }
@@ -264,6 +273,10 @@ void airSensingFunc(){
 
 void endGame(){//execute code 
   int nation = sum%4; 
+  lcd.clear();
+   lcd.setCursor(0,1);
+   String finalSumPrint = String(sum);  
+   lcd.print("Final Sum: " + finalSumPrint); 
   if(nation == 0){
     waterLightShow();  
   }else if(nation == 1){
@@ -295,7 +308,7 @@ void songInMinorKey(){
 }
 
 void fireLightShow(){
-  for(int i=0; i<20;i++){
+  for(int i=0; i<5;i++){
     setColor(255, 0, 0);
     delay(1000);
     setColor(255, 10, 0); 
